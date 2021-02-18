@@ -30,6 +30,7 @@ cluster-create: config
 cluster-prepare: kubeconfig cilium rook metallb
 
 cilium:
+	kubectl --kubeconfig=./kubeconfig create ns cilium
 	helm template cilium/cilium  \
 		--version 1.8.5 \
 		--namespace cilium \
