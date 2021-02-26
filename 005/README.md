@@ -23,8 +23,20 @@ Walid
 - kubectl get nodes returns nothing at first
 
   Fixer team impatience wait at least 20-30 seconds for any network timeout connectivity
+
+  2nd time kubectl get node returns an error regarding etcd error
+    ![etcd time out message when doing kubectl get nodes](etcd-timed-out.png)
+    
+    there were several failure and success events, failure to connect to peer, and failure related to diskspace
+    ![cat /var/log/containers etcd logs](etcd-logs-error.png)
+
+- Could not browser to wordpress site, nor hubble, service discovery seems broken
+  one possible cause suggested at the begining was coredns, but what was the root cause?
+  ![kubectl get events grepping for coredns](k-get-events-coredns-psp.png)
   
-- 2nd time kubectl get node returns an error regarding etcd error
+  
+- Could not see control-plane pods even though `kubectl get pods -n kube-system returns some oher pods`
+-![kubectl get pods -n kube-system](kube-system-get-pods.png)
 
 ## Contributing Factors
 
@@ -55,6 +67,10 @@ spec:
   egress:
   
 ```
+
+![Kube api manifest psp config](kube-api-psp.png)
+
+
 - Janitor used PodSecurityPolicy thinking to stop priviliged containers from running, raising the security bar, however, this will hide static pods if there were recreated, and will block special pods that required priviliged access such as CNI daemonsets and coredns if restarted from Running
 of course  this needs to be added to the kube-api manifests, as well a global wide cluster-role and cluster-role-binding was used.
 
@@ -85,7 +101,11 @@ spec:
   
   the configuration file just needs where the container runtime socket lives
   ```bash
-  # cat /etc/crictl.yaml
-  runtime-endpoint: unix:///var/run/containerd/containerd.sock
+ 
+ # cat /etc/crictl.yaml
+ runtime-endpoint: unix:///var/run/containerd/containerd.sock
+ 
   ```
+  
+  ![crictl config file and ps and pod output](crictl-settings-and-output.png)
 
