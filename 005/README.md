@@ -100,12 +100,12 @@ spec:
 - Second, even though this was the second episode, [crictl is an important tool for containerd "runtime" troubleshooting](https://kubernetes.io/docs/tasks/debug-application-cluster/crictl/), it would have saved time figuring out the master node status and the invisibility issue of the control-plane pods
   
   the configuration file just needs where the container runtime socket lives
-  ```bash
+ ```bash
  
  # cat /etc/crictl.yaml
  runtime-endpoint: unix:///var/run/containerd/containerd.sock
  
-  ```
+ ```
   
   ![crictl config file and ps and pod output](crictl-settings-and-output.png)
 
