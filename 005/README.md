@@ -1,6 +1,8 @@
 # Kluster 005
+
 ## User story
-A cloud janitor studying CKS working with a traditional auditor in securing a kubernets cluster gets a user call saying her application service discovery stopped working and can prove this is global across the cluster by testing againtst kubernetes.default.svc from any pod.
+
+A cloud janitor studying for the CKS is working with a traditional auditor in securing a a kubernets cluster. while they are applying security measures they get a user call saying her application service discovery stopped working and can prove this is global across the cluster by testing againtst kubernetes.default.svc from any pod. wondering if they have been playing with the **Kluster5**!!!
 
 ```
 Hi David,
@@ -22,16 +24,18 @@ Walid
 ## Discovered Symptoms
 - kubectl get nodes returns nothing at first
 
-  Fixer team impatience wait at least 20-30 seconds for any network timeout connectivity
+  Fixer team impatience wait first time around! at least 20-30 seconds for any network timeout connectivity
 
-  2nd time kubectl get node returns an error regarding etcd error
+  2nd time kubectl get node returns an error regarding etcd error, good call from David  to watch for any time outs, another thing he could have done increased
+  The verbosity.
+  
     ![etcd time out message when doing kubectl get nodes](etcd-timed-out.png)
     
-    there were several failure and success events, failure to connect to peer, and failure related to diskspace
+    there were several failure and success events, failure to connect to peer, and failure related to diskspace.
     ![cat /var/log/containers etcd logs](etcd-logs-error.png)
 
 - Could not browser to wordpress site, nor hubble, service discovery seems broken
-  one possible cause suggested at the begining was coredns, but what was the root cause?
+  One possible cause suggested at the begining was coredns, but what was the root cause?
   ![kubectl get events grepping for coredns](k-get-events-coredns-psp.png)
   
   
@@ -40,11 +44,12 @@ Walid
 
 ## Contributing Factors
 
-- as this was a POC/test cluster, it seems that the janitor was deploying, deleting, and scaling several deployments while he set the etcd quota too short 400Mbyte which caused etcd stop writing to its database. Janitor is clueless, he remove the configuration thinking it should be fine, but it wasn't, it made things worst to team fix as ceph and cluster have many events by the time, fix team used the cluster it was wrecked.
+- As this was a POC/test cluster, it seems that the janitor was playing around, deploying, deleting, and scaling several deployments while he set the etcd quota too short 400Mbyte which caused etcd stop writing to its database. Janitor is clueless, he remove the configuration thinking it should be fine, but it wasn't, it made things worst to team fix as ceph and cluster have many events by the time, fix team used the cluster it was wrecked.
 
-maybe inspired by similar issues in Kubernetes Github [Etcd size sometimes starts growing and grows until "mvcc: database space exceeded" #45037](https://github.com/kubernetes/kubernetes/issues/45037)
+Maybe inspired by similar issues in Kubernetes Github
+[Etcd size sometimes starts growing and grows until "mvcc: database space exceeded" #45037](https://github.com/kubernetes/kubernetes/issues/45037)
 
-- Auditor being traditional stopped network traffic forwarding, not knowing that container runtime create virtual interfaces for each container, or kubernetes creating virtual interfaces for its pods, this could attribute back to service traffic was blocked, context and cloud-native mindset could have helped. this was achived by using sysctl, in first episode iptables was used mistakenly by a security engineer, so this was a continution on that line of thought.
+- Auditor being traditional stopped network traffic forwarding using kernel system controls, not knowing that container runtime creates virtual interfaces for each container, or kubernetes creating virtual interfaces for its pods, this could attribute back to service traffic was blocked. Context and cloud-native mindset could have helped. this was achived by using Linux sysctl command, in first episode iptables was used mistakenly by a security engineer, so this was a continution on that line of thought. what other networking issues could happen by mistake?!
 
 ```bash
 
@@ -53,7 +58,7 @@ $ ansible -i inventory all -u root -m command -a 'sysctl -w net.ipv4.ip_forward=
 
 ```
 
-- Janitor studing for CKS started a network policy, however did not finish it causing all ingress traffic to be blocked.
+- Janitor studying for CKS started a network policy, however did not finish it causing all egress traffic to be blocked.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -71,7 +76,7 @@ spec:
 ![Kube api manifest psp config](kube-api-psp.png)
 
 
-- Janitor used PodSecurityPolicy thinking to stop priviliged containers from running, raising the security bar, however, this will hide static pods if there were recreated, and will block special pods that required priviliged access such as CNI daemonsets and coredns if restarted from Running
+- Janitor used PodSecurityPolicy thinking to stop priviliged containers from running, raising the security bar. However, this will hide static pods if there were recreated, and will block special pods that required priviliged access such as CNI daemonsets and coredns if restarted from Running
 of course  this needs to be added to the kube-api manifests, as well a global wide cluster-role and cluster-role-binding was used.
 
 ```yaml
@@ -108,4 +113,7 @@ spec:
  ```
   
   ![crictl config file and ps and pod output](crictl-settings-and-output.png)
+  
+  
+  Will try to update soon, Happy Klustering and best of luck to the *Fix team next time!*
 
