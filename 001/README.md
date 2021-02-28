@@ -13,4 +13,7 @@
 
 ## Notes from Kluster Breaker
 
-<Please replace this with an explanation of what you broke>
+A simple typo in the configmap for the cluster network.
+
+Attempted to make the first cluster nice and easy, and show a real world scenario and some of the issues with string maps in configuration files.
+
