@@ -1,0 +1,35 @@
+systemd:
+    units:
+        - name: nginx.service
+          enabled: true
+          contents: |
+              [Unit]
+              Description=A hello world unit!
+
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/bin/docker container run -p 80:80 -v /opt/webroot:/usr/share/nginx/html nginx
+
+              [Install]
+              WantedBy=multi-user.target
+
+storage:
+    files:
+        - path: /opt/webroot/index.html
+          filesystem: root
+          contents:
+              inline: |
+                  Hello, this is my million dollar application.
+
+          mode: 0644
+          user:
+              id: 500
+          group:
+              id: 500
+
+        - path: /opt/webroot/joke.html
+          filesystem: root
+          contents:
+              remote:
+                  url: https://icanhazdadjoke.com/
+          mode: 0644
