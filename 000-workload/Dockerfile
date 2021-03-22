@@ -7,7 +7,8 @@ RUN cargo build --release
 
 FROM rust:1 AS base
 
-ENTRYPOINT [ "/workload/httpd" ]
+WORKDIR /workload
+ENTRYPOINT [ "./httpd" ]
 
 FROM base AS v1
 
