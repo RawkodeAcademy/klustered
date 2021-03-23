@@ -24,24 +24,28 @@ async fn greet(_req: HttpRequest) -> impl Responder {
     let sql =
         r#"SELECT * FROM quotes OFFSET floor(random() * (SELECT COUNT(*) FROM quotes)) LIMIT 1;"#;
 
-    let mut client =
-        match Client::connect("host=postgres user=postgres, password=postgresql123", NoTls) {
-            Ok(c) => c,
-            Err(_) => {
-                return HttpResponse::Ok().body(
-                    r#"
+    let mut client = match Client::connect(
+        "host=postgres user=postgres, password=postgresql123, dbname=klustered",
+        NoTls,
+    ) {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::Ok().body(format!(
+                r#"
                 <html>
                 <head>
                     <title>v1 | Klustered</title>
                 </head>
                 <body>
                     <strong>Failed to connect to database</strong>
+                    <p>{}</p>
                 </body>
                 </html>
         "#,
-                );
-            }
-        };
+                e.to_string()
+            ));
+        }
+    };
 
     match client.query(sql, &[]) {
         Ok(result) => {
@@ -70,8 +74,8 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 quote, link, author
             ));
         }
-        Err(_) => {
-            return HttpResponse::Ok().body(
+        Err(e) => {
+            return HttpResponse::Ok().body(format!(
                 r#"
                 <html>
                 <head>
@@ -79,10 +83,12 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 </head>
                 <body>
                     <strong>Failed to query to database</strong>
+                    <p>{}</p>
                 </body>
                 </html>
         "#,
-            );
+                e.to_string(),
+            ));
         }
     }
 }

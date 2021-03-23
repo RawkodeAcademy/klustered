@@ -8,9 +8,6 @@ data:
         set -e
 
         psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-            CREATE USER quotes;
-            CREATE DATABASE quotes;
-            GRANT ALL PRIVILEGES ON DATABASE quotes TO quotes;
             CREATE TABLE IF NOT EXISTS quotes (
                 quote VARCHAR ( 5000 ) UNIQUE NOT NULL,
                 author VARCHAR ( 500 ) NOT NULL,
@@ -82,6 +79,10 @@ spec:
                       - mountPath: /docker-entrypoint-initdb.d
                         name: init
                   env:
+                      - name: POSTGRES_USER
+                        value: postgres
+                      - name: POSTGRES_DB
+                        value: klustered
                       - name: POSTGRES_PASSWORD
                         value: postgresql123
                   ports:
