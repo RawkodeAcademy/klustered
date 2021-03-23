@@ -25,7 +25,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
         r#"SELECT * FROM quotes OFFSET floor(random() * (SELECT COUNT(*) FROM quotes)) LIMIT 1;"#;
 
     let mut client = match Client::connect(
-        "host=postgres user=postgres, password=postgresql123, dbname=klustered",
+        "host=postgres user=postgres password=postgresql123 dbname=klustered",
         NoTls,
     ) {
         Ok(c) => c,
@@ -39,6 +39,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 <body>
                     <strong>Failed to connect to database</strong>
                     <p>{}</p>
+                    <iframe src="https://giphy.com/embed/11tTNkNy1SdXGg" width="480" height="267" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/disneypixar-disney-pixar-11tTNkNy1SdXGg">via GIPHY</a></p>
                 </body>
                 </html>
         "#,
@@ -84,6 +85,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 <body>
                     <strong>Failed to query to database</strong>
                     <p>{}</p>
+                    <iframe src="https://giphy.com/embed/FAYVdONl9am40nLz0o" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/BTTF-FAYVdONl9am40nLz0o">via GIPHY</a></p>
                 </body>
                 </html>
         "#,
