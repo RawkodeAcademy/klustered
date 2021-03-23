@@ -48,7 +48,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
         }
     };
 
-    match client.query(sql, &[]) {
+    let response  = match client.query(sql, &[]) {
         Ok(result) => {
             let row = result.first().unwrap();
 
@@ -56,7 +56,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
             let author: &str = row.get(1);
             let link: &str = row.get(2);
 
-            return HttpResponse::Ok().body(format!(
+            HttpResponse::Ok().body(format!(
                 r#"
                 <html>
                 <head>
@@ -64,8 +64,10 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 </head>
                 <body>
                     <center>
-                        <strong>{}</strong> by <a href="{}">{}</a>
-                        <video width="1280" height="720" controls>
+                        <div style="font-size: 20px">
+                            <strong>{}</strong> by <a target="_blank" href="{}">{}</a>
+                        </div>
+                        <video width="720" height="640" controls>
                             <source src="/assets/video.mp4" type="video/mp4">
                         </video>
                     </center>
@@ -73,10 +75,11 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 </html>
         "#,
                 quote, link, author
-            ));
+            ))
         }
         Err(e) => {
-            return HttpResponse::Ok().body(format!(
+
+            HttpResponse::Ok().body(format!(
                 r#"
                 <html>
                 <head>
@@ -90,7 +93,11 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 </html>
         "#,
                 e.to_string(),
-            ));
+            ))
         }
-    }
+    };
+
+    client.close();
+
+    response
 }
