@@ -60,22 +60,7 @@ metallb:
 	kubectl --kubeconfig=./kubeconfig apply --wait -f https://raw.githubusercontent.com/equinix/cloud-provider-equinix-metal/v1.1.0/lb/manifests.yaml
 
 workload:
-	#!/usr/bin/env bash
-	mkdir -p workload
-	curl -L https://k8s.io/examples/application/wordpress/mysql-deployment.yaml -o workload/mysql.yaml
-	curl -L https://k8s.io/examples/application/wordpress/wordpress-deployment.yaml -o workload/wordpress.yaml
-
-	cat <<EOF >./workload/kustomization.yaml
-	secretGenerator:
-	- name: mysql-pass
-	  literals:
-	  - password=kluster-{{ KLUSTERNUM }}
-
-	resources:
-	- ./mysql.yaml
-	- ./wordpress.yaml
-	EOF
-	kubectl --kubeconfig=./kubeconfig apply -k ./workload
+	kubectl --kubeconfig=./kubeconfig apply -f ../000-workload/opt/kubernetes
 
 teleport:
 	#!/usr/bin/env bash
