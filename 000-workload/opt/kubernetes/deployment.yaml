@@ -14,6 +14,7 @@ spec:
             containers:
                 - name: klustered
                   image: ghcr.io/rawkode/klustered:v1
+                  imagePullPolicy: Always
                   livenessProbe:
                       httpGet:
                           path: /health
