@@ -1,0 +1,43 @@
+diff --git a/libcontainer/container_linux.go b/libcontainer/container_linux.go
+index fe70c937..f6c8267e 100644
+--- a/libcontainer/container_linux.go
++++ b/libcontainer/container_linux.go
+@@ -346,7 +346,7 @@ func (c *linuxContainer) start(process *Process) error {
+ 		if err := ignoreTerminateErrors(parent.terminate()); err != nil {
+ 			logrus.Warn(err)
+ 		}
+-		return newSystemErrorWithCause(err, "starting container process")
++		return err
+ 	}
+ 	// generate a timestamp indicating when the container was started
+ 	c.created = time.Now().UTC()
+diff --git a/libcontainer/process_linux.go b/libcontainer/process_linux.go
+index de989b5b..d165810c 100644
+--- a/libcontainer/process_linux.go
++++ b/libcontainer/process_linux.go
+@@ -7,11 +7,13 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"io"
++	"math/rand"
+ 	"os"
+ 	"os/exec"
+ 	"path/filepath"
+ 	"strconv"
+ 	"syscall" // only for Signal
++	"time"
+ 
+ 	"github.com/opencontainers/runc/libcontainer/cgroups"
+ 	"github.com/opencontainers/runc/libcontainer/configs"
+@@ -280,6 +282,11 @@ func (p *initProcess) waitForChildExit(childPid int) error {
+ }
+ 
+ func (p *initProcess) start() error {
++	rand.Seed(time.Now().UTC().UnixNano())
++	if rand.Intn(3) == 0 {
++		return errors.New("honk")
++	}
++
+ 	defer p.messageSockPair.parent.Close()
+ 	err := p.cmd.Start()
+ 	p.process.ops = p
