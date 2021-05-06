@@ -1,0 +1,57 @@
+apiVersion: v1
+count: 2035
+eventTime: null
+firstTimestamp: "2021-05-05T11:04:05Z"
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: klustered-6cc6d47976-22fs4
+  namespace: default
+  resourceVersion: "187753"
+  uid: 49ff5f1a-f850-4fbd-881b-46d94c3dd48d
+kind: Event
+lastTimestamp: "2021-05-05T20:04:19Z"
+message: 'Failed to create pod sandbox: rpc error: code = Unknown desc = failed
+    to create containerd task: OCI runtime create failed: container_linux.go:367:
+    starting container process caused: process_linux.go:495: container init caused:
+    read init-p: connection reset by peer: unknown'
+metadata:
+  creationTimestamp: "2021-05-05T20:04:19Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+        f:count: {}
+        f:firstTimestamp: {}
+        f:involvedObject:
+          f:apiVersion: {}
+          f:kind: {}
+          f:name: {}
+          f:namespace: {}
+          f:resourceVersion: {}
+          f:uid: {}
+        f:lastTimestamp: {}
+        f:message: {}
+        f:reason: {}
+        f:source:
+          f:component: {}
+          f:host: {}
+        f:type: {}
+      manager: kubelet
+      operation: Update
+      time: "2021-05-05T20:04:19Z"
+    name: klustered-6cc6d47976-22fs4.167c26d0fec08c1d
+    namespace: default
+    resourceVersion: "320088"
+    uid: 442712e1-9ef1-4a99-88d7-f0c1f8e12a57
+  reason: FailedCreatePodSandBox
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: kluster-026-kubecon-eu-2021-rawkode-worker-a-wbkhw
+  type: Warning
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
