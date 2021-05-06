@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: honk
+  namespace: honk
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: honk
+  template:
+    metadata:
+      labels:
+        app: honk
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: honk
+          image: ghcr.io/frezbo/klustered-h0nk:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "50m"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            timeoutSeconds: 3
+            failureThreshold: 3
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            timeoutSeconds: 1
+            failureThreshold: 3
+            initialDelaySeconds: 2
+            periodSeconds: 10
