@@ -25,7 +25,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
         r#"SELECT * FROM quotes OFFSET floor(random() * (SELECT COUNT(*) FROM quotes)) LIMIT 1;"#;
 
     let mut client = match Client::connect(
-        "host=postgres user=postgres password=postgresql123 dbname=klustered",
+        "host=postgres connect_timeout=2 user=postgres password=postgresql123 dbname=klustered",
         NoTls,
     ) {
         Ok(c) => c,
@@ -68,7 +68,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                             <strong>{}</strong> by <a target="_blank" href="{}">{}</a>
                         </div>
                         <video width="720" height="640" controls>
-                            <source src="/assets/video.mp4" type="video/mp4">
+                            <source src="/assets/video.webm" type="video/webm">
                         </video>
                     </center>
                 </body>
