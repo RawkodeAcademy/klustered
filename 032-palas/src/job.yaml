@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: not-a-virus
+spec:
+  template:
+    spec:
+      containers:
+      - name: not-the-container-you-are-looking-for
+        image: sidpalas/klustered:0.0.3
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: NUM_JOBS
+          value: "3"
+        - name: IT_HAS_BEGUN
+          value: "true"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: OnFailure
+  backoffLimit: 4
+
+  
