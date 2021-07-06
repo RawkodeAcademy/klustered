@@ -2,3 +2,4 @@ cilium.yaml
 cluster.yaml
 kubeconfig
 workload
+.dccache

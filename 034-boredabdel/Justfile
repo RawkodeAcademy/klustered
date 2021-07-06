@@ -3,20 +3,42 @@ KLUSTERNUM := `basename $(pwd)`
 init:
 	#!/usr/bin/env sh
 	read -p "API Key: " -s PACKET_API_KEY && export PACKET_API_KEY=${PACKET_API_KEY}
-	clusterctl init --infrastructure packet --core cluster-api:v0.3.18 --bootstrap kubeadm:v0.3.18 --control-plane kubeadm:v0.3.18
+	clusterctl init --infrastructure packet
+
+import-ssh-keys:
+	#!/usr/bin/env sh
+	set -e
+	source .env
+	if [[ -z $PROJECT_ID ]]; then
+		echo "Project ID not configured in .env"
+		exit -1
+	fi
+	if [[ -z $GITHUB_USER ]]; then
+		echo "GitHub User not configured in .env"
+		exit -1
+	fi
+
+	COUNTER=0
+	IFS=$'\n'
+	for key in $(curl https://github.com/${GITHUB_USER}.keys)
+	do
+		COUNTER=$((COUNTER + 1))
+		curl -XPOST -H "X-Auth-Token: ${PACKET_API_KEY}" -H "Content-type: application/json" -d "{\"key\": \"${key}\", \"label\": \"${COUNTER}\"}" https://api.packet.net/projects/${PROJECT_ID}/ssh-keys
+	done
 
 config:
 	#!/usr/bin/env sh
 	set -e
+	source .env
 	if [[ -z $PROJECT_ID ]]; then
 		echo "Project ID not configured in .env"
 		exit -1
 	fi
 
 	clusterctl config cluster kluster-{{ KLUSTERNUM }} \
-		--kubernetes-version v1.21.2 \
+		--kubernetes-version v1.20.4 \
 		--control-plane-machine-count=1 \
-		--worker-machine-count=2 \
+		--worker-machine-count=3 \
 		> cluster.yaml
 	sed -i '' -e 's/socat jq/socat jq lvm2/g' cluster.yaml
 
@@ -26,7 +48,7 @@ kubeconfig:
 cluster-create: config
 	kubectl apply -f cluster.yaml
 
-cluster-prepare: kubeconfig cilium rook
+cluster-prepare: kubeconfig cilium rook metallb
 
 cilium:
 	kubectl --kubeconfig=./kubeconfig create ns cilium
@@ -54,22 +76,15 @@ rook:
 	kubectl --kubeconfig=./kubeconfig apply --wait -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
 	kubectl --kubeconfig=./kubeconfig apply --wait -f ./ceph-blockpool.yaml
 
+metallb:
+	kubectl --kubeconfig=./kubeconfig patch clusterroles system:cloud-controller-manager --patch-file=./ccm-patch.yaml
+	kubectl --kubeconfig=./kubeconfig apply --wait -f https://raw.githubusercontent.com/equinix/cloud-provider-equinix-metal/v1.1.0/lb/manifests.yaml
+
 workload:
 	kubectl --kubeconfig=./kubeconfig apply -f ../000-workload/opt/kubernetes
 
-ssh-keys:
-	#!/usr/bin/env bash
-	for NODE_IP in $(kubectl --kubeconfig=./kubeconfig get nodes -o wide --no-headers | awk '{ print $7}')
-	do
-		for username in $(echo ${GITHUB_USER} | tr ',' '\n')
-		do
-			ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${NODE_IP} "curl -fsSL https://github.com/${username}.keys >> /root/.ssh/authorized_keys"
-		done
-	done
-
 teleport:
 	#!/usr/bin/env bash
-	set -e
 	# Install the Teleport leader
 	LEADER_IP=$(kubectl --kubeconfig=./kubeconfig get nodes -o wide --no-headers | head -n1 | awk '{ print $7}')
 	LEADER_MANAGEMENT_IP=$(ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${LEADER_IP} -C "curl -s https://metadata.platformequinix.com/metadata | jq -r '.network.addresses | map(select(.public==true,.management==true)) | first | .address'")
@@ -82,7 +97,7 @@ teleport:
 	EOF
 	)
 
-	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${LEADER_IP} bash -s <<EOF
+	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${LEADER_IP} <<EOF
 	${INSTALL_TELEPORT}
 
 	cat > /etc/teleport.yaml <<EOCAT
@@ -99,20 +114,12 @@ teleport:
 	app_service:
 	  enabled: true
 	  debug_app: true
-	  apps:
-	  - name: "klustered"
-	    uri: "http://localhost:30000"
 	proxy_service:
 	  enabled: true
 	  public_addr: ${LEADER_MANAGEMENT_IP}
 	  listen_addr: 0.0.0.0:3023
 	  web_listen_addr: 0.0.0.0:3080
-	  kube_listen_addr: 0.0.0.0:3026
 	  tunnel_listen_addr: 0.0.0.0:3024
-	kubernetes_service:
-	  enabled: yes
-	  listen_addr: 0.0.0.0:3027
-	  kubeconfig_file: "/etc/kubernetes/admin.conf"
 	EOCAT
 
 	systemctl restart teleport
@@ -120,11 +127,12 @@ teleport:
 	sleep 2
 
 	tctl users add rawkode root
+
 	EOF
 
 	for NODE_IP in $(kubectl --kubeconfig=./kubeconfig get nodes -o wide --no-headers | tail -n +2 | awk '{ print $7}'); do
 
-	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${NODE_IP} bash -s <<EOF
+	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root ${NODE_IP} <<EOF
 	${INSTALL_TELEPORT}
 	cat > /etc/teleport.yaml <<EOCAT
 	auth_service:

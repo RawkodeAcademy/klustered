@@ -3,7 +3,7 @@ KLUSTERNUM := `basename $(pwd)`
 init:
 	#!/usr/bin/env sh
 	read -p "API Key: " -s PACKET_API_KEY && export PACKET_API_KEY=${PACKET_API_KEY}
-	clusterctl init --infrastructure packet
+	clusterctl init --bootstrap kubeadm:v0.3.18 --control-plane kubeadm:v0.3.18 --core cluster-api:v0.3.8 --infrastructure packet
 
 config:
 	#!/usr/bin/env sh
@@ -15,9 +15,9 @@ config:
 	fi
 
 	clusterctl config cluster kluster-{{ KLUSTERNUM }} \
-		--kubernetes-version v1.20.4 \
-		--control-plane-machine-count=1 \
-		--worker-machine-count=3 \
+		--kubernetes-version v1.21.2 \
+		--control-plane-machine-count=3 \
+		--worker-machine-count=1 \
 		> cluster.yaml
 	sed -i '' -e 's/socat jq/socat jq lvm2/g' cluster.yaml
 
