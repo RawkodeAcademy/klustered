@@ -150,5 +150,12 @@ const cloudConfig = cloudinit.getConfig({
         "utf8"
       ),
     },
+    {
+      contentType: "text/x-shellscript",
+      content: fs.readFileSync(
+        "../cloud-init/scripts/guest-ssh-keys.sh",
+        "utf8"
+      ),
+    },
   ],
 });

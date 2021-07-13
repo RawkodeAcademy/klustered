@@ -134,51 +134,12 @@ export const cloudConfig = cloudinit.getConfig({
         "utf8"
       ),
     },
+    {
+      contentType: "text/x-shellscript",
+      content: fs.readFileSync(
+        "../cloud-init/scripts/guest-ssh-keys.sh",
+        "utf8"
+      ),
+    },
   ],
 });
-
-// import { ComponentResource, ComponentResourceOptions } from "@pulumi/pulumi";
-// import * as cloudinit from "@pulumi/cloudinit";
-// import * as metal from "@pulumi/equinix-metal";
-// import * as fs from "fs";
-
-// import { Cluster } from "./cluster";
-
-// // let counter = 1;
-
-// // const createWorkerPoolNode = (
-// //   workerPool: WorkerPool,
-// //   name: string,
-// //   workerPoolConfig: WorkerPoolConfig,
-// //   num: number
-// // ): WorkerNode => {
-// //   const device = new metal.Device(
-// //     `worker-${name}-${counter++}`,
-// //     {
-// //       hostname: `worker-${name}-${counter}`,
-// //       metro: workerPoolConfig.metro,
-// //       billingCycle: metal.BillingCycle.Hourly,
-// //       plan: workerPoolConfig.plan,
-// //       operatingSystem: metal.OperatingSystem.Ubuntu2004,
-// //       projectId: workerPoolConfig.project,
-// //       customData: pulumi
-// //         .all([
-// //           workerPoolConfig.controlPlane.joinToken,
-// //           workerPoolConfig.controlPlane.ipAddress,
-// //         ])
-// //         .apply(([joinToken, ipAddress]) =>
-// //           JSON.stringify({
-// //             kubernetesVersion: workerPoolConfig.kubernetesVersion,
-// //             joinToken: joinToken,
-// //             controlPlaneIp: ipAddress,
-// //           })
-// //         ),
-// //       userData: cloudConfig.then((c) => c.rendered),
-// //     },
-// //     {
-// //       parent: workerPool,
-// //     }
-// //   );
-
-// //   return device;
-// // };
