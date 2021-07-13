@@ -1,0 +1,4 @@
+name: kubernetes-cloud-init
+runtime: nodejs
+description: An example of deploying Kubernetes with kubeadm via cloud-init on Equinix Metal
+main: src/index.ts
