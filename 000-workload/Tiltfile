@@ -1,8 +1,0 @@
-docker_build('ghcr.io/rawkode/klustered', '.', target="v1")
-
-k8s_yaml('opt/kubernetes/postgresql.yaml')
-
-k8s_yaml('opt/kubernetes/deployment.yaml')
-k8s_yaml('opt/kubernetes/service.yaml')
-
-k8s_resource('klustered', port_forwards=8080, resource_deps=["postgresql"])
