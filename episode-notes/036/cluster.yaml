@@ -1,0 +1,205 @@
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: KubeadmControlPlane
+metadata:
+  name: kluster-036-civo-control-plane
+  namespace: default
+spec:
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: PacketMachineTemplate
+    name: kluster-036-civo-control-plane
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          cloud-provider: external
+      controllerManager:
+        extraArgs:
+          cloud-provider: external
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    postKubeadmCommands:
+    - |
+      cat <<EOF >> /etc/network/interfaces
+      auto lo:0
+      iface lo:0 inet static
+        address {{ .controlPlaneEndpoint }}
+        netmask 255.255.255.255
+      EOF
+    - systemctl restart networking
+    - 'kubectl --kubeconfig /etc/kubernetes/admin.conf create secret generic -n kube-system packet-cloud-config --from-literal=cloud-sa.json=''{"apiKey": "{{ .apiKey }}","projectID": "1918aae7-fea5-42c3-a904-723ede3043a8", "eipTag": "cluster-api-provider-packet:cluster-id:kluster-036-civo"}'''
+    - kubectl apply --kubeconfig /etc/kubernetes/admin.conf -f https://github.com/packethost/packet-ccm/releases/download/v1.1.0/deployment.yaml
+    preKubeadmCommands:
+    - sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
+    - swapoff -a
+    - mount -a
+    - |
+      cat <<EOF > /etc/modules-load.d/containerd.conf
+      overlay
+      br_netfilter
+      EOF
+    - modprobe overlay
+    - modprobe br_netfilter
+    - |
+      cat <<EOF > /etc/sysctl.d/99-kubernetes-cri.conf
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      EOF
+    - sysctl --system
+    - apt-get -y update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl
+    - curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+    - echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+    - apt-get update -y
+    - TRIMMED_KUBERNETES_VERSION=$(echo {{ .kubernetesVersion }} | sed 's/\./\./g' | sed 's/^v//')
+    - RESOLVED_KUBERNETES_VERSION=$(apt-cache policy kubelet | awk -v VERSION=${TRIMMED_KUBERNETES_VERSION} '$1~ VERSION { print $1 }' | head -n1)
+    - apt-get install -y ca-certificates socat jq lvm2 ebtables apt-transport-https cloud-utils prips containerd kubelet=${RESOLVED_KUBERNETES_VERSION} kubeadm=${RESOLVED_KUBERNETES_VERSION} kubectl=${RESOLVED_KUBERNETES_VERSION}
+    - systemctl daemon-reload
+    - systemctl enable containerd
+    - systemctl start containerd
+    - ping -c 3 -q {{ .controlPlaneEndpoint }} && echo OK || ip addr add {{ .controlPlaneEndpoint }} dev lo
+  replicas: 1
+  version: v1.21.2
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: PacketMachineTemplate
+metadata:
+  name: kluster-036-civo-control-plane
+  namespace: default
+spec:
+  template:
+    spec:
+      OS: ubuntu_20_04
+      billingCycle: hourly
+      machineType: c1.small.x86
+      sshKeys:
+      - MBP16
+      tags: []
+---
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  name: kluster-036-civo
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+    services:
+      cidrBlocks:
+      - 172.26.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: KubeadmControlPlane
+    name: kluster-036-civo-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: PacketCluster
+    name: kluster-036-civo
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: PacketCluster
+metadata:
+  name: kluster-036-civo
+  namespace: default
+spec:
+  facility: ams1
+  projectID: 1918aae7-fea5-42c3-a904-723ede3043a8
+---
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: MachineDeployment
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: kluster-036-civo
+    pool: worker-a
+  name: kluster-036-civo-worker-a
+  namespace: default
+spec:
+  clusterName: kluster-036-civo
+  replicas: 2
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: kluster-036-civo
+      pool: worker-a
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: kluster-036-civo
+        pool: worker-a
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          kind: KubeadmConfigTemplate
+          name: kluster-036-civo-worker-a
+      clusterName: kluster-036-civo
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        kind: PacketMachineTemplate
+        name: kluster-036-civo-worker-a
+      version: v1.21.2
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: PacketMachineTemplate
+metadata:
+  name: kluster-036-civo-worker-a
+  namespace: default
+spec:
+  template:
+    spec:
+      OS: ubuntu_20_04
+      billingCycle: hourly
+      machineType: c1.small.x86
+      sshKeys:
+      - MBP16
+      tags: []
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: KubeadmConfigTemplate
+metadata:
+  name: kluster-036-civo-worker-a
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+      preKubeadmCommands:
+      - sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
+      - swapoff -a
+      - mount -a
+      - |
+        cat <<EOF > /etc/modules-load.d/containerd.conf
+        overlay
+        br_netfilter
+        EOF
+      - modprobe overlay
+      - modprobe br_netfilter
+      - |
+        cat <<EOF > /etc/sysctl.d/99-kubernetes-cri.conf
+        net.bridge.bridge-nf-call-iptables  = 1
+        net.ipv4.ip_forward                 = 1
+        net.bridge.bridge-nf-call-ip6tables = 1
+        EOF
+      - sysctl --system
+      - apt-get -y update
+      - DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl
+      - curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+      - echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+      - apt-get update -y
+      - TRIMMED_KUBERNETES_VERSION=$(echo {{ .kubernetesVersion }} | sed 's/\./\./g' | sed 's/^v//')
+      - RESOLVED_KUBERNETES_VERSION=$(apt-cache policy kubelet | awk -v VERSION=${TRIMMED_KUBERNETES_VERSION} '$1~ VERSION { print $1 }' | head -n1)
+      - apt-get install -y ca-certificates socat jq lvm2 ebtables apt-transport-https cloud-utils prips containerd kubelet=${RESOLVED_KUBERNETES_VERSION} kubeadm=${RESOLVED_KUBERNETES_VERSION} kubectl=${RESOLVED_KUBERNETES_VERSION}
+      - systemctl daemon-reload
+      - systemctl enable containerd
+      - systemctl start containerd

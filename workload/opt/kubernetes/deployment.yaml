@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: klustered
+spec:
+    selector:
+        matchLabels:
+            app: klustered
+    template:
+        metadata:
+            labels:
+                app: klustered
+        spec:
+            containers:
+                - name: klustered
+                  image: ghcr.io/rawkode/klustered:v1
+                  imagePullPolicy: Always
+                  livenessProbe:
+                      httpGet:
+                          path: /health
+                          port: 8080
+                      initialDelaySeconds: 2
+                      periodSeconds: 1
+                  readinessProbe:
+                      httpGet:
+                          path: /health
+                          port: 8080
+                      initialDelaySeconds: 2
+                      periodSeconds: 1
+                  resources:
+                      limits:
+                          memory: "128Mi"
+                          cpu: "500m"
+                  ports:
+                      - containerPort: 8080
