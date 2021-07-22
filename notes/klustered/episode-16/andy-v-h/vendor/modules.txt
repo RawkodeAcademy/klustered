@@ -1,0 +1,16 @@
+# github.com/fatih/color v1.12.0
+## explicit
+github.com/fatih/color
+# github.com/guineveresaenger/golang-rainbow v0.0.0-20171201190047-7b6c54e09b61
+## explicit
+github.com/guineveresaenger/golang-rainbow
+# github.com/mattn/go-colorable v0.1.8
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.12
+github.com/mattn/go-isatty
+# github.com/raphamorim/go-rainbow v0.1.0
+## explicit
+# github.com/tomnomnom/xtermcolor v0.0.0-20160428124646-b78803f00a7e
+## explicit
+# golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae
+golang.org/x/sys/unix

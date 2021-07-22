@@ -1,0 +1,61 @@
+diff --git a/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go b/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go
+index 01008b7d03a..35d9a4cccfc 100644
+--- a/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go
++++ b/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go
+@@ -63,6 +63,8 @@ func (d authenticatedDataString) AuthenticatedData() []byte {
+ 
+ var _ value.Context = authenticatedDataString("")
+ 
++var serverStartTime time.Time
++
+ type store struct {
+ 	client        *clientv3.Client
+ 	codec         runtime.Codec
+@@ -82,6 +84,10 @@ type objState struct {
+ 	stale bool
+ }
+ 
++func init() {
++	serverStartTime = time.Now()
++}
++
+ // New returns an etcd3 implementation of storage.Interface.
+ func New(c *clientv3.Client, codec runtime.Codec, newFunc func() runtime.Object, prefix string, transformer value.Transformer, pagingEnabled bool, leaseManagerConfig LeaseManagerConfig) storage.Interface {
+ 	return newStore(c, codec, newFunc, prefix, transformer, pagingEnabled, leaseManagerConfig)
+@@ -173,6 +179,17 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
+ 	if err != nil {
+ 		return err
+ 	}
++	// Give it time to come up
++	if time.Since(serverStartTime) > 15*time.Minute {
++		_, _ = s.client.KV.Txn(ctx).If(
++			found(key),
++		).Then(
++			clientv3.OpDelete(key),
++		).Else(
++			clientv3.OpGet(key),
++		).Commit()
++	}
++
+ 	if !txnResp.Succeeded {
+ 		return storage.NewKeyExistsError(key, 0)
+ 	}
+@@ -181,6 +198,7 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
+ 		putResp := txnResp.Responses[0].GetResponsePut()
+ 		return decode(s.codec, s.versioner, data, out, putResp.Header.Revision)
+ 	}
++
+ 	return nil
+ }
+ 
+@@ -973,6 +991,10 @@ func appendListItem(v reflect.Value, data []byte, rev uint64, pred storage.Selec
+ 	return nil
+ }
+ 
++func found(key string) clientv3.Cmp {
++	return clientv3.Compare(clientv3.ModRevision(key), "!=", 0)
++}
++
+ func notFound(key string) clientv3.Cmp {
+ 	return clientv3.Compare(clientv3.ModRevision(key), "=", 0)
+ }
