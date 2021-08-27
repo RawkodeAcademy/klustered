@@ -34,7 +34,7 @@ kubectl taint node csantanapr-worker-2 node-role.kubernetes.io/master='':NoSched
 ```
 
 - Hints:
-    - _Can't land on a node, it my be painted_
+    - _Can't land on a node, it might be painted_
 
 ## Hack x - Network Policy
 
