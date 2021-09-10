@@ -4,11 +4,15 @@ import * as random from "@pulumi/random";
 import { Cluster } from "./kubernetes";
 
 const stackName = pulumi.getStack();
+const config = new pulumi.Config();
 
-const cluster = new Cluster(stackName, {
-  kubernetesVersion: "1.21.2",
-  metro: "am",
-  project: "7158c8a9-a55e-454e-a1aa-ce5f8937ed10",
+const project = new metal.Project("klustered", {
+  name: "Klustered",
+  organizationId: config.requireSecret("metalOrg"),
+  bgpConfig: {
+    deploymentType: "local",
+    asn: 65000,
+  },
 });
 
 const teleportSecret = new random.RandomString("teleport-secret", {
@@ -19,14 +23,49 @@ const teleportSecret = new random.RandomString("teleport-secret", {
   number: true,
 });
 
-cluster.createControlPlane({
+interface Team {
+  name: string;
+  guests: string[];
+}
+
+const teamOne: Team = config.requireObject("teamOne");
+const teamTwo: Team = config.requireObject("teamTwo");
+
+const clusterOne = new Cluster(teamOne.name, {
+  kubernetesVersion: config.require("kubernetesVersion"),
+  metro: config.require("metalMetro"),
+  project: project.id,
+  guests: teamOne.guests,
+});
+
+clusterOne.createControlPlane({
   highAvailability: false,
   plan: metal.Plan.C1SmallX86,
   teleportSecret: teleportSecret.result,
 });
 
-cluster.createWorkerPool("worker", {
-  kubernetesVersion: "1.21.2",
+clusterOne.createWorkerPool("worker", {
+  kubernetesVersion: "1.22.0",
+  plan: metal.Plan.C1SmallX86,
+  replicas: 2,
+  teleportSecret: teleportSecret.result,
+});
+
+const clusterTwo = new Cluster(teamTwo.name, {
+  kubernetesVersion: config.require("kubernetesVersion"),
+  metro: config.require("metalMetro"),
+  project: project.id,
+  guests: teamTwo.guests,
+});
+
+clusterTwo.createControlPlane({
+  highAvailability: false,
+  plan: metal.Plan.C1SmallX86,
+  teleportSecret: teleportSecret.result,
+});
+
+clusterTwo.createWorkerPool("worker", {
+  kubernetesVersion: "1.22.0",
   plan: metal.Plan.C1SmallX86,
   replicas: 2,
   teleportSecret: teleportSecret.result,

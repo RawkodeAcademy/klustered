@@ -8,9 +8,6 @@ import * as cloudinit from "@pulumi/cloudinit";
 import * as metal from "@pulumi/equinix-metal";
 import * as fs from "fs";
 
-const pulumiConfig = new PulumiConfig();
-const guests: string[] = pulumiConfig.requireObject(`guests`);
-
 import { Cluster } from "./cluster";
 import { PREFIX } from "./meta";
 
@@ -24,6 +21,8 @@ export interface Config {
 }
 
 export class WorkerPool extends ComponentResource {
+  readonly cluster: Cluster;
+
   constructor(cluster: Cluster, name: string, config: Config) {
     super(
       `${PREFIX}:kubernetes:WorkerPool`,
@@ -31,6 +30,8 @@ export class WorkerPool extends ComponentResource {
       config,
       { parent: cluster }
     );
+
+    this.cluster = cluster;
 
     for (let i = 1; i <= config.replicas; i++) {
       this.createWorkerPoolNode(name, cluster, config, i);
@@ -62,7 +63,7 @@ export class WorkerPool extends ComponentResource {
             joinToken,
             controlPlaneIp,
             teleportSecret,
-            guests: guests.join(","),
+            guests: this.cluster.config.guests.join(","),
           })
         ),
         userData: cloudConfig.then((c) => c.rendered),

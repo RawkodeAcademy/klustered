@@ -8,9 +8,6 @@ import { CertificateAuthority, KeyAndCert } from "./certificates";
 import { JoinToken } from "./join-token";
 import { cloudConfig } from "./cloud-config";
 
-const pulumiConfig = new pulumi.Config();
-const guests: string[] = pulumiConfig.requireObject("guests");
-
 export interface Config {
   plan: metal.Plan;
   highAvailability: boolean;
@@ -139,7 +136,7 @@ export class ControlPlane extends ComponentResource {
                 etcdCert,
                 teleportSecret,
                 dnsName,
-                guests: guests.join(","),
+                guests: this.cluster.config.guests.join(","),
               })
           ),
         userData: cloudConfig.then((c) => c.rendered),

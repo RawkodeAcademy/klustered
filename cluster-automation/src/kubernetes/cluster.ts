@@ -7,9 +7,10 @@ import { WorkerPool, Config as WorkerPoolConfig } from "./worker-pool";
 import { ControlPlane, Config as ControlPlaneConfig } from "./control-plane";
 
 interface Config {
-  project: string;
+  project: Output<string>;
   metro: string;
   kubernetesVersion: string;
+  guests: string[];
 }
 
 export class Cluster extends ComponentResource {
@@ -54,7 +55,7 @@ export class Cluster extends ComponentResource {
       }
     ).address;
 
-    this.dnsName = new cloudflare.Record("cluster-dns", {
+    this.dnsName = new cloudflare.Record(`${name}-cluster-dns`, {
       name: name,
       zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
       type: "A",
@@ -62,7 +63,7 @@ export class Cluster extends ComponentResource {
       ttl: 360,
     }).hostname;
 
-    this.dnsWildcard = new cloudflare.Record("cluster-dns-wildcard", {
+    this.dnsWildcard = new cloudflare.Record(`${name}-cluster-dns-wildcard`, {
       name: `*.${name}`,
       zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
       type: "A",

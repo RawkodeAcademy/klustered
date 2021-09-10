@@ -1,4 +1,4 @@
-name: kubernetes-cloud-init
+name: klustered
 runtime: nodejs
-description: An example of deploying Kubernetes with kubeadm via cloud-init on Equinix Metal
+description: Klustered
 main: src/index.ts
