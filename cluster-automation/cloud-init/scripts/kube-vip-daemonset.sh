@@ -3,11 +3,11 @@
 set -e
 INGRESS_IP=$(jq -r ".ingressIp" /tmp/customdata.json)
 
-ctr image pull ghcr.io/kube-vip/kube-vip:latest
+ctr image pull ghcr.io/kube-vip/kube-vip:v0.4.0
 ctr run \
     --rm \
     --net-host \
-    ghcr.io/kube-vip/kube-vip:latest \
+    ghcr.io/kube-vip/kube-vip:v0.4.0 \
     vip /kube-vip manifest daemonset \
       --interface lo\
       --services \

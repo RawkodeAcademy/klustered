@@ -86,6 +86,10 @@ const cloudConfig = cloudinit.getConfig({
   parts: [
     {
       contentType: "text/x-shellscript",
+      content: fs.readFileSync("../cloud-init/scripts/install-jq.sh", "utf8"),
+    },
+    {
+      contentType: "text/x-shellscript",
       content: fs.readFileSync(
         "../cloud-init/scripts/download-metadata.sh",
         "utf8"

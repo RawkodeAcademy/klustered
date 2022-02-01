@@ -28,45 +28,30 @@ interface Team {
   guests: string[];
 }
 
-const teamOne: Team = config.requireObject("teamOne");
-const teamTwo: Team = config.requireObject("teamTwo");
+interface Teams {
+  teams: Team[];
+}
 
-const clusterOne = new Cluster(teamOne.name, {
-  kubernetesVersion: config.require("kubernetesVersion"),
-  metro: config.require("metalMetro"),
-  project: project.id,
-  guests: teamOne.guests,
-});
+const teams: Teams = config.requireObject("teams");
 
-clusterOne.createControlPlane({
-  highAvailability: false,
-  plan: metal.Plan.C1SmallX86,
-  teleportSecret: teleportSecret.result,
-});
+teams.teams.map((team) => {
+  const cluster = new Cluster(team.name, {
+    kubernetesVersion: config.require("kubernetesVersion"),
+    metro: config.require("metalMetro"),
+    project: project.id,
+    guests: team.guests,
+  });
 
-clusterOne.createWorkerPool("worker", {
-  kubernetesVersion: "1.22.0",
-  plan: metal.Plan.C1SmallX86,
-  replicas: 2,
-  teleportSecret: teleportSecret.result,
-});
+  cluster.createControlPlane({
+    highAvailability: false,
+    plan: metal.Plan.C3MediumX86,
+    teleportSecret: teleportSecret.result,
+  });
 
-const clusterTwo = new Cluster(teamTwo.name, {
-  kubernetesVersion: config.require("kubernetesVersion"),
-  metro: config.require("metalMetro"),
-  project: project.id,
-  guests: teamTwo.guests,
-});
-
-clusterTwo.createControlPlane({
-  highAvailability: false,
-  plan: metal.Plan.C1SmallX86,
-  teleportSecret: teleportSecret.result,
-});
-
-clusterTwo.createWorkerPool("worker", {
-  kubernetesVersion: "1.22.0",
-  plan: metal.Plan.C1SmallX86,
-  replicas: 2,
-  teleportSecret: teleportSecret.result,
+  cluster.createWorkerPool("worker", {
+    kubernetesVersion: config.require("kubernetesVersion"),
+    plan: metal.Plan.C3MediumX86,
+    replicas: 2,
+    teleportSecret: teleportSecret.result,
+  });
 });

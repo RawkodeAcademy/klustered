@@ -4,11 +4,11 @@ CONTROL_PLANE_IP=$(jq -r ".controlPlaneIp" /tmp/customdata.json)
 
 mkdir -p /etc/kubernetes/manifests
 
-ctr image pull ghcr.io/kube-vip/kube-vip:latest
+ctr image pull ghcr.io/kube-vip/kube-vip:v0.4.0
 ctr run \
     --rm \
     --net-host \
-    ghcr.io/kube-vip/kube-vip:latest \
+    ghcr.io/kube-vip/kube-vip:v0.4.0 \
     vip /kube-vip manifest pod \
       --interface lo \
       --address $CONTROL_PLANE_IP \

@@ -7,6 +7,10 @@ export const cloudConfig = cloudinit.getConfig({
   parts: [
     {
       contentType: "text/x-shellscript",
+      content: fs.readFileSync("../cloud-init/scripts/install-jq.sh", "utf8"),
+    },
+    {
+      contentType: "text/x-shellscript",
       content: fs.readFileSync(
         "../cloud-init/scripts/wait-for-bgp-enabled.sh",
         "utf8"
