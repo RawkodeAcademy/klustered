@@ -3,7 +3,8 @@ set -e
 
 KUBERNETES_VERSION=$(jq -r ".kubernetesVersion" /tmp/customdata.json)
 JOIN_TOKEN=$(jq -r ".joinToken" /tmp/customdata.json)
-CONTROL_PLANE_IP=$(jq -r ".controlPlaneIp" /tmp/customdata.json)
+DNS_NAME=$(jq -r ".dnsName" /tmp/customdata.json)
+PUBLIC_IPv4=$(curl -s https://metadata.platformequinix.com/metadata | jq -r '.network.addresses | map(select(.public==true and .management==true)) | first | .address')
 PRIVATE_IPv4=$(curl -s https://metadata.platformequinix.com/metadata | jq -r '.network.addresses | map(select(.public==false and .management==true)) | first | .address')
 
 echo "KUBELET_EXTRA_ARGS=--node-ip=${PRIVATE_IPv4} --address=${PRIVATE_IPv4}" > /etc/default/kubelet
@@ -11,7 +12,7 @@ echo "KUBELET_EXTRA_ARGS=--node-ip=${PRIVATE_IPv4} --address=${PRIVATE_IPv4}" > 
 cat > /etc/kubernetes/init.yaml <<EOF
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
-controlPlaneEndpoint: ${CONTROL_PLANE_IP}:6443
+controlPlaneEndpoint: ${PUBLIC_IPv4}:6443
 kubernetesVersion: ${KUBERNETES_VERSION}
 apiServer:
   extraArgs:
@@ -45,10 +46,11 @@ nodeRegistration:
   taints: null
 EOF
 
+
 cat > /etc/kubernetes/join.yaml <<EOF
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
-controlPlaneEndpoint: ${CONTROL_PLANE_IP}:6443
+controlPlaneEndpoint: ${DNS_NAME}:6443
 kubernetesVersion: ${KUBERNETES_VERSION}
 apiServer:
   extraArgs:
@@ -70,7 +72,7 @@ controlPlane:
     bindPort: 6443
 discovery:
   bootstrapToken:
-    apiServerEndpoint: ${CONTROL_PLANE_IP}:6443
+    apiServerEndpoint: ${DNS_NAME}:6443
     token: ${JOIN_TOKEN}
     unsafeSkipCAVerification: true
   timeout: 5m0s

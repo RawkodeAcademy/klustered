@@ -1,8 +1,5 @@
-#!/usr/bin/env bash
 #!/usr/bin/env sh
 set -e
-INGRESS_IP=$(jq -r ".ingressIp" /tmp/customdata.json)
-
 ctr image pull ghcr.io/kube-vip/kube-vip:v0.4.0
 ctr run \
     --rm \

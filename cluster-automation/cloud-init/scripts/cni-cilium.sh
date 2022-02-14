@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
-
-CONTROL_PLANE_IP=$(jq -r ".controlPlaneIp" /tmp/customdata.json)
+PUBLIC_IPv4=$(curl -s https://metadata.platformequinix.com/metadata | jq -r '.network.addresses | map(select(.public==true and .management==true)) | first | .address')
 
 helm repo add cilium https://helm.cilium.io/
 
@@ -19,7 +18,7 @@ helm template cilium/cilium  \
 		--set global.hubble.listenAddress=":4244" \
 		--set global.hubble.ui.enabled=true \
     --set kubeProxyReplacement=probe \
-    --set k8sServiceHost=${CONTROL_PLANE_IP} \
+    --set k8sServiceHost=${PUBLIC_IPv4} \
     --set k8sServicePort=6443 \
 		> /tmp/cilium.yaml
 

@@ -1,35 +1,28 @@
 #!/usr/bin/env bash
-CONTROL_PLANE_IP=$(jq -r ".controlPlaneIp" /tmp/customdata.json)
+set -e
+
 DNS_NAME=$(jq -r ".dnsName" /tmp/customdata.json)
 TELEPORT_SECRET=$(jq -r ".teleportSecret" /tmp/customdata.json)
+GITHUB_CLIENT_ID=$(jq -r ".githubClientId" /tmp/customdata.json)
+GITHUB_CLIENT_SECRET=$(jq -r ".githubClientSecret" /tmp/customdata.json)
+TEAMS=$(jq -r ".teams" /tmp/customdata.json)
 
-export KUBECONFIG=/etc/kubernetes/admin.conf
-curl -fsSL -o /usr/local/bin/create-teleport-kubeconfig https://raw.githubusercontent.com/gravitational/teleport/master/examples/k8s-auth/get-kubeconfig.sh
-bash /usr/local/bin/create-teleport-kubeconfig
-mv ./kubeconfig /etc/kubernetes/teleport.conf
+IFS=,
+teams=( ${TEAMS} )
 
 cat > /etc/teleport.yaml <<EOCAT
 teleport:
   data_dir: /var/lib/teleport
 auth_service:
   enabled: true
+  authentication:
+    type: github
   listen_addr: 0.0.0.0:3025
   cluster_name: ${DNS_NAME}
   tokens:
     - proxy,node,app:${TELEPORT_SECRET}
 ssh_service:
   enabled: true
-app_service:
-  enabled: true
-  debug_app: true
-  apps:
-  - name: "klustered"
-    uri: "http://localhost:30000"
-
-kubernetes_service:
-  enabled: yes
-  listen_addr: 0.0.0.0:3027
-  kubeconfig_file: "/etc/kubernetes/teleport.conf"
 
 proxy_service:
   enabled: true
@@ -42,3 +35,61 @@ proxy_service:
     enabled: "yes"
     email: david@rawkode.com
 EOCAT
+
+cat >> /etc/teleport.github.yaml <<EOCAT
+kind: role
+version: v3
+metadata:
+  name: rawkode
+spec:
+  allow:
+    logins: ['root']
+    node_labels:
+      '*': '*'
+EOCAT
+
+for team in "${teams[@]}"; do
+cat >> /etc/teleport.github.yaml <<EOCAT
+---
+kind: role
+version: v3
+metadata:
+  name: ${team}
+spec:
+  allow:
+    logins: ['root']
+    node_labels:
+      'team': '${team}'
+EOCAT
+done
+
+cat >> /etc/teleport.github.yaml <<EOCAT
+---
+kind: github
+version: v3
+metadata:
+  name: github
+spec:
+  client_id: ${GITHUB_CLIENT_ID}
+  client_secret: ${GITHUB_CLIENT_SECRET}
+  display: Github
+  redirect_url: https://${DNS_NAME}/v1/webapi/github/callback
+  teams_to_logins:
+  - organization: rawkode-academy
+    team: klustered
+    logins:
+    - rawkode
+EOCAT
+
+for team in "${teams[@]}"; do
+cat >> /etc/teleport.github.yaml <<EOCAT
+  - organization: rawkode-academy
+    team: ${team}
+    logins:
+    - ${team}
+EOCAT
+
+done
+
+
+tctl create /etc/teleport.github.yaml

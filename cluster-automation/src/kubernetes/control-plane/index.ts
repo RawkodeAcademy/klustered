@@ -1,4 +1,5 @@
 import { ComponentResource } from "@pulumi/pulumi";
+import * as cloudflare from "@pulumi/cloudflare";
 import * as pulumi from "@pulumi/pulumi";
 import * as metal from "@pulumi/equinix-metal";
 
@@ -7,11 +8,12 @@ import { Cluster } from "../cluster";
 import { CertificateAuthority, KeyAndCert } from "./certificates";
 import { JoinToken } from "./join-token";
 import { cloudConfig } from "./cloud-config";
+import { Teleport } from "../../teleport";
 
 export interface Config {
   plan: metal.Plan;
   highAvailability: boolean;
-  teleportSecret: pulumi.Output<string>;
+  teleport: Teleport;
 }
 
 interface ControlPlaneNode {
@@ -62,6 +64,17 @@ export class ControlPlane extends ComponentResource {
     const controlPlane1 = this.createDevice(1);
     this.controlPlaneDevices.push(controlPlane1);
 
+    this.cluster.dnsName = new cloudflare.Record(
+      `${cluster.name}-cluster-dns`,
+      {
+        name: cluster.name,
+        zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
+        type: "A",
+        value: controlPlane1.device.accessPublicIpv4,
+        ttl: 360,
+      }
+    ).hostname;
+
     if (config.highAvailability) {
       const controlPlane2 = this.createDevice(2, [controlPlane1.device]);
       this.controlPlaneDevices.push(controlPlane2);
@@ -73,6 +86,16 @@ export class ControlPlane extends ComponentResource {
 
   createName(name: string) {
     return `${this.cluster.name}-${name}`;
+  }
+
+  getPublicIP(): pulumi.Output<string> {
+    if (this.controlPlaneDevices.length === 0) {
+      throw new Error(
+        "Can't request public IP until a control plane device has been created"
+      );
+    }
+
+    return this.controlPlaneDevices[0].device.accessPublicIpv4;
   }
 
   createDevice(i: number, dependsOn: metal.Device[] = []): ControlPlaneNode {
@@ -91,8 +114,8 @@ export class ControlPlane extends ComponentResource {
         operatingSystem: metal.OperatingSystem.Ubuntu2004,
         customData: pulumi
           .all([
+            this.cluster.name,
             this.joinToken.token,
-            this.cluster.controlPlaneIp,
             this.cluster.ingressIp,
             this.certificateAuthority.privateKey.privateKeyPem,
             this.certificateAuthority.certificate.certPem,
@@ -102,13 +125,13 @@ export class ControlPlane extends ComponentResource {
             this.frontProxyCertificate.certificate.certPem,
             this.etcdCertificate.privateKey.privateKeyPem,
             this.etcdCertificate.certificate.certPem,
-            this.config.teleportSecret,
-            this.cluster.dnsName,
+            this.config.teleport.secret,
+            this.config.teleport.url,
           ])
           .apply(
             ([
+              clusterName,
               joinToken,
-              controlPlaneIp,
               ingressIp,
               certificateAuthorityKey,
               certificateAuthorityCert,
@@ -119,12 +142,12 @@ export class ControlPlane extends ComponentResource {
               etcdKey,
               etcdCert,
               teleportSecret,
-              dnsName,
+              teleportUrl,
             ]) =>
               JSON.stringify({
+                clusterName,
                 kubernetesVersion: this.cluster.config.kubernetesVersion,
                 joinToken,
-                controlPlaneIp,
                 ingressIp,
                 certificateAuthorityKey,
                 certificateAuthorityCert,
@@ -135,7 +158,7 @@ export class ControlPlane extends ComponentResource {
                 etcdKey,
                 etcdCert,
                 teleportSecret,
-                dnsName,
+                teleportUrl,
                 guests: this.cluster.config.guests.join(","),
               })
           ),

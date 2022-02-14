@@ -1,23 +1,20 @@
-import {
-  all,
-  Config as PulumiConfig,
-  ComponentResource,
-  Output,
-} from "@pulumi/pulumi";
+import { all, ComponentResource, Output } from "@pulumi/pulumi";
 import * as cloudinit from "@pulumi/cloudinit";
 import * as metal from "@pulumi/equinix-metal";
 import * as fs from "fs";
 
 import { Cluster } from "./cluster";
 import { PREFIX } from "./meta";
+import { Teleport } from "../teleport";
 
 type WorkerNode = metal.Device;
 
 export interface Config {
+  controlPlaneIp: Output<string>;
   plan: metal.Plan;
   replicas: number;
   kubernetesVersion: string;
-  teleportSecret: Output<string>;
+  teleport: Teleport;
 }
 
 export class WorkerPool extends ComponentResource {
@@ -54,17 +51,28 @@ export class WorkerPool extends ComponentResource {
         operatingSystem: metal.OperatingSystem.Ubuntu2004,
         projectId: cluster.config.project,
         customData: all([
+          cluster.name,
           cluster.joinToken(),
-          cluster.controlPlaneIp,
-          config.teleportSecret,
-        ]).apply(([joinToken, controlPlaneIp, teleportSecret]) =>
-          JSON.stringify({
-            kubernetesVersion: config.kubernetesVersion,
+          config.controlPlaneIp,
+          config.teleport.secret,
+          config.teleport.url,
+        ]).apply(
+          ([
+            clusterName,
             joinToken,
             controlPlaneIp,
             teleportSecret,
-            guests: this.cluster.config.guests.join(","),
-          })
+            teleportUrl,
+          ]) =>
+            JSON.stringify({
+              clusterName,
+              kubernetesVersion: config.kubernetesVersion,
+              joinToken,
+              controlPlaneIp,
+              teleportSecret,
+              teleportUrl,
+              guests: this.cluster.config.guests.join(","),
+            })
         ),
         userData: cloudConfig.then((c) => c.rendered),
       },

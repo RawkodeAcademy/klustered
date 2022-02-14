@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-CONTROL_PLANE_IP=$(jq -r ".controlPlaneIp" /tmp/customdata.json)
+CLUSTER_NAME=$(jq -r ".clusterName" /tmp/customdata.json)
 TELEPORT_SECRET=$(jq -r ".teleportSecret" /tmp/customdata.json)
+TELEPORT_URL=$(jq -r ".teleportUrl" /tmp/customdata.json)
 
 cat > /etc/teleport.yaml <<EOCAT
 auth_service:
@@ -11,9 +12,11 @@ proxy_service:
 
 ssh_service:
   enabled: true
+  labels:
+    team: ${CLUSTER_NAME}
 
 teleport:
   auth_token: "${TELEPORT_SECRET}"
   auth_servers:
-    - "${CONTROL_PLANE_IP}:3025"
+    - "${TELEPORT_URL}:3025"
 EOCAT

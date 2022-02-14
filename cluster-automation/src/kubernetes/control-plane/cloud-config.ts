@@ -120,14 +120,14 @@ export const cloudConfig = cloudinit.getConfig({
     {
       contentType: "text/x-shellscript",
       content: fs.readFileSync(
-        "../cloud-init/scripts/teleport-server.sh",
+        "../cloud-init/scripts/teleport-agent.sh",
         "utf8"
       ),
     },
     {
       contentType: "text/x-shellscript",
       content: fs.readFileSync(
-        "../cloud-init/scripts/teleport-restart.sh",
+        "../cloud-init/scripts/teleport-app-server.sh",
         "utf8"
       ),
     },
