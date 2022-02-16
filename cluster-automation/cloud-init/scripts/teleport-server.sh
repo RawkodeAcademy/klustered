@@ -46,6 +46,8 @@ spec:
     logins: ['root']
     node_labels:
       '*': '*'
+    app_labels:
+      '*': '*'
 EOCAT
 
 for team in "${teams[@]}"; do
@@ -59,6 +61,8 @@ spec:
   allow:
     logins: ['root']
     node_labels:
+      'team': '${team}'
+    app_labels:
       'team': '${team}'
 EOCAT
 done

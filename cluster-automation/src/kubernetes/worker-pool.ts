@@ -53,6 +53,7 @@ export class WorkerPool extends ComponentResource {
         customData: all([
           cluster.name,
           cluster.joinToken(),
+          cluster.dnsName,
           config.controlPlaneIp,
           config.teleport.secret,
           config.teleport.url,
@@ -60,12 +61,14 @@ export class WorkerPool extends ComponentResource {
           ([
             clusterName,
             joinToken,
+            dnsName,
             controlPlaneIp,
             teleportSecret,
             teleportUrl,
           ]) =>
             JSON.stringify({
               clusterName,
+              dnsName,
               kubernetesVersion: config.kubernetesVersion,
               joinToken,
               controlPlaneIp,

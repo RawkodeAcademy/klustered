@@ -20,7 +20,7 @@ const githubClientSecret = config.require("githubClientSecret");
 export const installTeleport = (dnsName: string, teams: Teams) => {
   teams.teams.forEach((team) => {
     const githubTeam = new github.Team(team.name, {
-      name: team.name, // should be `klustered-${team.name}
+      name: `klustered-${team.name}`,
     });
 
     team.guests.forEach((member) => {
