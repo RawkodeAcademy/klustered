@@ -20,4 +20,4 @@ ctr run \
       --localAS $(jq '.bgp_neighbors[0].customer_as' /tmp/metadata.json) \
       --bgpRouterID $(jq -r '.bgp_neighbors[0].customer_ip' /tmp/metadata.json) | tee /etc/kubernetes/manifests/kube-vip.yaml
 
-sed -ri 's#- manager#- manager\n    - --promethuesHTTPServer=":2113"#g' /etc/kubernetes/manifests/kube-vip.yaml
+sed -ri 's#- manager#- manager\n    - --promethuesHTTPServer=:2113#g' /etc/kubernetes/manifests/kube-vip.yaml
