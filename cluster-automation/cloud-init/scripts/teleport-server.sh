@@ -88,7 +88,7 @@ EOCAT
 for team in "${teams[@]}"; do
 cat >> /etc/teleport.github.yaml <<EOCAT
   - organization: rawkode-academy
-    team: ${team}
+    team: klustered-${team}
     logins:
     - ${team}
 EOCAT
