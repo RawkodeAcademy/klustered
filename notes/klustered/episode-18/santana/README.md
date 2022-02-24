@@ -36,7 +36,7 @@ kubectl taint node csantanapr-worker-2 node-role.kubernetes.io/master='':NoSched
 - Hints:
     - _Can't land on a node, it might be painted_
 
-## Hack x - Network Policy
+## Hack 4 - Network Policy
 
 Create a deny all all network policy, name allow all
 
@@ -57,14 +57,14 @@ EOF
 - Hints:
     - _Please allow all, do not deny policy_
 
-## Hack x - Mutation WebHook
+## Hack 5 - Mutation WebHook
 
 
 Create an dynamic admission control via mutation webhook, that replaces the `v2` application image with a custom one, instead of David is Carlos dancing.
 
 Prevent from finding out the mutatingwebhookconfiguration exists:
 
-1. Have the webhook call an external url instead of running a pod or process on the cluster. I used a [knative.dev](https://knative.dev) serverless function in [IBM Cloud Code Engine](https://www.ibm.com/cloud/code-engine). Name it something that looks legit `k8s.io.config`
+1. Have the webhook call an external URL instead of running a pod or process on the cluster. I used a [knative.dev](https://knative.dev) serverless function in [IBM Cloud Code Engine](https://www.ibm.com/cloud/code-engine). Name it something that looks legit `k8s.io.config`. You can find the code to the mutation webhook here [@csantanapr/image-replacer](https://github.com/csantanapr/image-replacer)
 
     ```yaml
     apiVersion: admissionregistration.k8s.io/v1
@@ -96,8 +96,8 @@ Prevent from finding out the mutatingwebhookconfiguration exists:
     ```
 
 - Hints:
-    - _Oh I see someone is dancing, the mutants changed the music?_
-    - _Those mutants are hard to spot, maybe check under kubectl or bash profile_
+    - _Oh, I see someone is dancing, the mutants changed the music?_
+    - _Those mutants are hard to spot; maybe check under kubectl or bash profile_
 
 
 Here is [the dance](https://twitter.com/csantanapr/status/1430965933590384640?s=20) when replacing `v2` image
