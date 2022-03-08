@@ -1,3 +1,5 @@
+use std::os;
+
 use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use postgres::{Client, NoTls};
@@ -21,6 +23,8 @@ async fn health(_req: HttpRequest) -> impl Responder {
 }
 
 async fn greet(_req: HttpRequest) -> impl Responder {
+    let version = std::env::var("VERSION").unwrap_or("unknown".to_string());
+
     let sql =
         r#"SELECT * FROM quotes OFFSET floor(random() * (SELECT COUNT(*) FROM quotes)) LIMIT 1;"#;
 
@@ -34,7 +38,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 r#"
                 <html>
                 <head>
-                    <title>v1 | Klustered</title>
+                    <title>{} | Klustered</title>
                 </head>
                 <body>
                     <strong>Failed to connect to database</strong>
@@ -43,7 +47,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 </body>
                 </html>
         "#,
-                e.to_string()
+                version, e.to_string()
             ));
         }
     };
@@ -60,7 +64,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 r#"
                 <html>
                 <head>
-                    <title>v1 | Klustered</title>
+                    <title>{} | Klustered</title>
                 </head>
                 <body>
                     <center>
@@ -68,13 +72,12 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                             <strong>{}</strong> by <a target="_blank" href="{}">{}</a>
                         </div>
                         <video width="720" height="640" controls>
-                            <source src="/assets/video.webm" type="video/webm">
+                            <source src="/assets/video-{}.webm" type="video/webm">
                         </video>
                     </center>
                 </body>
                 </html>
-        "#,
-                quote, link, author
+        "#, version, quote, link, author, version,
             ))
         }
         Err(e) => {
@@ -83,7 +86,7 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                 r#"
                 <html>
                 <head>
-                    <title>v1 | Klustered</title>
+                    <title>{} | Klustered</title>
                 </head>
                 <body>
                     <strong>Failed to query to database</strong>
@@ -91,13 +94,12 @@ async fn greet(_req: HttpRequest) -> impl Responder {
                     <iframe src="https://giphy.com/embed/FAYVdONl9am40nLz0o" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/BTTF-FAYVdONl9am40nLz0o">via GIPHY</a></p>
                 </body>
                 </html>
-        "#,
-                e.to_string(),
+        "#, version, e.to_string(),
             ))
         }
     };
 
-    client.close();
+    client.close().unwrap();
 
     response
 }
