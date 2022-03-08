@@ -224,5 +224,8 @@ EOCAT
 
 done
 
+systemctl enable teleport && systemctl start teleport
+
+sleep 10
 
 tctl create /etc/teleport.github.yaml

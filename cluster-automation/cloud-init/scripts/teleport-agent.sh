@@ -20,3 +20,5 @@ teleport:
   auth_servers:
     - "${TELEPORT_URL}:3025"
 EOCAT
+
+systemctl enable teleport && systemctl start teleport

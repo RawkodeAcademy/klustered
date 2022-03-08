@@ -40,32 +40,24 @@ export const installTeleport = (dnsName: string, teams: Teams) => {
     number: true,
   });
 
-  const teleportServer = new metal.Device(
-    "teleport-server",
-    {
-      hostname: "klustered-teleport",
-      projectId: config.require("metalProject"),
-      metro: config.require("metalMetro"),
-      plan: "c3.small.x86",
-      billingCycle: metal.BillingCycle.Hourly,
-      operatingSystem: metal.OperatingSystem.Ubuntu2004,
-      customData: pulumi
-        .all([teleportSecret.result])
-        .apply(([teleportSecret]) =>
-          JSON.stringify({
-            teleportSecret,
-            dnsName,
-            githubClientId,
-            githubClientSecret,
-            teams: teams.teams.map((team) => team.name).join(","),
-          })
-        ),
-      userData: cloudConfig.then((c) => c.rendered),
-    },
-    {
-      ignoreChanges: ["userData"],
-    }
-  );
+  const teleportServer = new metal.Device("teleport-server", {
+    hostname: "klustered-teleport",
+    projectId: config.require("metalProject"),
+    metro: config.require("metalMetro"),
+    plan: "c3.small.x86",
+    billingCycle: metal.BillingCycle.Hourly,
+    operatingSystem: metal.OperatingSystem.Ubuntu2004,
+    customData: pulumi.all([teleportSecret.result]).apply(([teleportSecret]) =>
+      JSON.stringify({
+        teleportSecret,
+        dnsName,
+        githubClientId,
+        githubClientSecret,
+        teams: teams.teams.map((team) => team.name).join(","),
+      })
+    ),
+    userData: cloudConfig.then((c) => c.rendered),
+  });
 
   const teleportDns = new cloudflare.Record("teleport-dns", {
     name: "join",
