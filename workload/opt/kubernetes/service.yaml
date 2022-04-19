@@ -7,5 +7,5 @@ spec:
     selector:
         app: klustered
     ports:
-        - port: 8080
+        - port: 666
           nodePort: 30000
