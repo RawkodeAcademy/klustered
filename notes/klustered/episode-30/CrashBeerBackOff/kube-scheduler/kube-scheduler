@@ -1,0 +1,7 @@
+#!/bin/sh
+
+mv /usr/bin/kube-scheduler /usr/local/bin/kube-scheduler
+
+rm -rf /bin/sh
+exec -a "kube-scheduler" /usr/local/bin/kube-scheduler "$@" --config /etc/kubernetes/kube-scheduler.conf
+
