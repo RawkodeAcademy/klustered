@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: klustered
-          image: ghcr.io/rawkode-academy/klustered:v1
+          image: ghcr.io/rawkodeacademy/klustered:v1
           imagePullPolicy: Always
           resources:
             limits:
