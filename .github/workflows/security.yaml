@@ -12,8 +12,8 @@ jobs:
       - uses: kubescape/github-action@main
         continue-on-error: true
         with:
-          format: junit
+          format: sarif
           files: ./workload/opt/kubernetes
-      - uses: mikepenz/action-junit-report@v3
+      - uses: github/codeql-action/upload-sarif@v1
         with:
-          report_paths: "*.xml"
+          sarif_file: results.sarif
