@@ -14,3 +14,6 @@ jobs:
         with:
           format: pretty-printer
           files: ./workload/opt/kubernetes
+      - name: Display Kubescape Results
+        run: |
+          cat results.out
