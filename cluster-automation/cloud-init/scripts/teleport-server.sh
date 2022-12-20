@@ -13,36 +13,41 @@ teams=( ${TEAMS} )
 cat > /etc/teleport.yaml <<EOCAT
 teleport:
   data_dir: /var/lib/teleport
+
 auth_service:
   enabled: true
+  proxy_listener_mode: multiplex
   authentication:
     type: github
   listen_addr: 0.0.0.0:3025
   cluster_name: ${DNS_NAME}
   tokens:
     - proxy,node,app:${TELEPORT_SECRET}
+
 ssh_service:
   enabled: true
 
 proxy_service:
   enabled: true
-  public_addr: ${DNS_NAME}:443
   web_listen_addr: ":443"
-  listen_addr: 0.0.0.0:3023
-  kube_listen_addr: 0.0.0.0:3026
-  tunnel_listen_addr: 0.0.0.0:3024
+  public_addr: ${DNS_NAME}:443
   acme:
     enabled: "yes"
-    email: david@rawkode.com
+    email: david@rawkode.academy
 EOCAT
 
 cat >> /etc/teleport.github.yaml <<EOCAT
 kind: role
-version: v3
+version: v5
 metadata:
   name: rawkode
 spec:
   allow:
+    join_sessions:
+    - name: join
+      roles: ['*']
+      kinds: ['*']
+      modes: ['moderator', 'peer', 'observer']
     app_labels:
       '*': '*'
     db_labels:
@@ -53,130 +58,6 @@ spec:
     - root
     node_labels:
       '*': '*'
-    rules:
-    - resources:
-      - session
-      verbs:
-      - list
-      - read
-    - resources:
-      - event
-      verbs:
-      - list
-      - read
-    - resources:
-      - user
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - role
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - oidc
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - saml
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - github
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - cluster_audit_config
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - cluster_auth_preference
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - auth_connector
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - cluster_name
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - cluster_networking_config
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - session_recording_config
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - trusted_cluster
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - remote_cluster
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-    - resources:
-      - token
-      verbs:
-      - list
-      - create
-      - read
-      - update
-      - delete
-
 EOCAT
 
 for team in "${teams[@]}"; do
@@ -193,6 +74,11 @@ spec:
       'team': '${team}'
     app_labels:
       'team': '${team}'
+    join_sessions:
+    - name: join
+      roles: ['*']
+      kinds: ['*']
+      modes: ['observer', 'peer']
 EOCAT
 done
 
@@ -207,18 +93,21 @@ spec:
   client_secret: ${GITHUB_CLIENT_SECRET}
   display: Github
   redirect_url: https://${DNS_NAME}/v1/webapi/github/callback
-  teams_to_logins:
-  - organization: rawkode-academy
+  teams_to_roles:
+  - organization: RawkodeAcademy
     team: klustered
-    logins:
+    roles:
+    - access
+    - editor
+    - auditor
     - rawkode
 EOCAT
 
 for team in "${teams[@]}"; do
 cat >> /etc/teleport.github.yaml <<EOCAT
-  - organization: rawkode-academy
+  - organization: RawkodeAcademy
     team: klustered-${team}
-    logins:
+    roles:
     - ${team}
 EOCAT
 

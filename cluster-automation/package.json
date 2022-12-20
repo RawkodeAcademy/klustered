@@ -5,7 +5,8 @@
   },
   "dependencies": {
     "@pulumi/pulumi": "^3.24.1",
-    "@pulumi/cloudflare": "^4.4.0",
+    "@pulumi/google-native": "^0.24.0",
+    "@pulumi/gcp": "6.36.0",
     "@pulumi/cloudinit": "^1.3.0",
     "@pulumi/equinix-metal": "^3.2.1",
     "@pulumi/github": "^4.10.0",

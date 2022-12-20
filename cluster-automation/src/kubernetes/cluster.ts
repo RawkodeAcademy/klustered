@@ -1,5 +1,5 @@
 import { ComponentResource, output, Output } from "@pulumi/pulumi";
-import * as cloudflare from "@pulumi/cloudflare";
+import * as google from "@pulumi/google-native";
 import * as metal from "@pulumi/equinix-metal";
 
 import { PREFIX } from "./meta";
@@ -41,13 +41,19 @@ export class Cluster extends ComponentResource {
       }
     ).address;
 
-    this.dnsWildcard = new cloudflare.Record(`${name}-cluster-dns-wildcard`, {
-      name: `*.${name}`,
-      zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
-      type: "A",
-      value: this.ingressIp,
-      ttl: 360,
-    }).hostname;
+    this.dnsWildcard = new google.dns.v1.ResourceRecordSet(
+      `${name}-cluster-dns-wildcard`,
+      {
+        managedZone: "klustered-live-65ef9b5",
+        ttl: 360,
+        type: "A",
+        rrdatas: [this.ingressIp],
+        name: `*.${name}.klustered.live.`,
+      },
+      {
+        deleteBeforeReplace: true,
+      }
+    ).name;
   }
 
   public createControlPlane(config: ControlPlaneConfig): ControlPlane {

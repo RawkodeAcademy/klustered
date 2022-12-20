@@ -37,7 +37,7 @@ teams.teams.map((team) => {
     controlPlaneIp: controlPlane.getPublicIP(),
     kubernetesVersion: config.require("kubernetesVersion"),
     plan: metal.Plan.C3MediumX86,
-    replicas: 2,
+    replicas: 1,
     teleport,
   });
 });

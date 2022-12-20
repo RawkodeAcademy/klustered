@@ -1,5 +1,5 @@
 import { ComponentResource } from "@pulumi/pulumi";
-import * as cloudflare from "@pulumi/cloudflare";
+import * as google from "@pulumi/google-native";
 import * as pulumi from "@pulumi/pulumi";
 import * as metal from "@pulumi/equinix-metal";
 
@@ -64,16 +64,19 @@ export class ControlPlane extends ComponentResource {
     const controlPlane1 = this.createDevice(1);
     this.controlPlaneDevices.push(controlPlane1);
 
-    this.cluster.dnsName = new cloudflare.Record(
+    this.cluster.dnsName = new google.dns.v1.ResourceRecordSet(
       `${cluster.name}-cluster-dns`,
       {
-        name: cluster.name,
-        zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
-        type: "A",
-        value: controlPlane1.device.accessPublicIpv4,
+        managedZone: "klustered-live-65ef9b5",
         ttl: 360,
+        type: "A",
+        rrdatas: [controlPlane1.device.accessPublicIpv4],
+        name: `${cluster.name}.klustered.live.`,
+      },
+      {
+        deleteBeforeReplace: true,
       }
-    ).hostname;
+    ).name;
 
     if (config.highAvailability) {
       const controlPlane2 = this.createDevice(2, [controlPlane1.device]);

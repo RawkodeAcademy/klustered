@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as metal from "@pulumi/equinix-metal";
 import * as github from "@pulumi/github";
-import * as cloudflare from "@pulumi/cloudflare";
+import * as google from "@pulumi/google-native";
 import * as random from "@pulumi/random";
 
 import { cloudConfig } from "./cloud-config";
@@ -14,8 +14,8 @@ export interface Teleport {
 
 const config = new pulumi.Config();
 
-const githubClientId = config.require("githubClientID");
-const githubClientSecret = config.require("githubClientSecret");
+const githubClientId = process.env.GITHUB_CLIENT_ID!;
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRET!;
 
 export const installTeleport = (dnsName: string, teams: Teams) => {
   teams.teams.forEach((team) => {
@@ -59,16 +59,22 @@ export const installTeleport = (dnsName: string, teams: Teams) => {
     userData: cloudConfig.then((c) => c.rendered),
   });
 
-  const teleportDns = new cloudflare.Record("teleport-dns", {
-    name: "join",
-    zoneId: "00c9cdb838d5b14d0a4d1fd926335eee",
-    type: "A",
-    value: teleportServer.accessPublicIpv4,
-    ttl: 360,
-  });
+  const teleportDns = new google.dns.v1.ResourceRecordSet(
+    "teleport-dns",
+    {
+      managedZone: "klustered-live-65ef9b5",
+      ttl: 360,
+      type: "A",
+      rrdatas: [teleportServer.accessPublicIpv4],
+      name: "join.klustered.live.",
+    },
+    {
+      deleteBeforeReplace: true,
+    }
+  );
 
   return {
-    url: teleportDns.hostname,
+    url: teleportDns.name,
     secret: teleportSecret.result,
   };
 };

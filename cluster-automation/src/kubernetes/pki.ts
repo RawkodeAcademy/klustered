@@ -17,10 +17,10 @@ export interface KeyAndCert {
 }
 
 const allowedUses = [
-  "signing",
-  "key encipherment",
-  "server auth",
-  "client auth",
+  "cert_signing",
+  "key_encipherment",
+  "server_auth",
+  "client_auth",
 ];
 
 export const createCertificateAuthority = (
@@ -32,17 +32,14 @@ export const createCertificateAuthority = (
   });
 
   const certificate = new tls.SelfSignedCert(name, {
-    keyAlgorithm: "RSA",
     validityPeriodHours: 87600,
     earlyRenewalHours: 168,
     isCaCertificate: true,
     privateKeyPem: privateKey.privateKeyPem,
     allowedUses,
-    subjects: [
-      {
-        commonName: name,
-      },
-    ],
+    subject: {
+      commonName: name,
+    },
   });
 
   return { privateKey, certificate };
@@ -55,18 +52,14 @@ export const createKeyAndCert = (args: CreateKeyAndCertArgs): KeyAndCert => {
   });
 
   const certificateRequest = new tls.CertRequest(args.name, {
-    keyAlgorithm: privateKey.algorithm,
     privateKeyPem: privateKey.privateKeyPem,
-    subjects: [
-      {
-        commonName: args.name,
-      },
-    ],
+    subject: {
+      commonName: args.name,
+    },
   });
 
   const certificate = new tls.LocallySignedCert(args.name, {
     certRequestPem: certificateRequest.certRequestPem,
-    caKeyAlgorithm: args.certificateAuthority.privateKey.algorithm,
     caPrivateKeyPem: args.certificateAuthority.privateKey.privateKeyPem,
     caCertPem: args.certificateAuthority.certificate.certPem,
     isCaCertificate: args.isCertificateAuthority,
