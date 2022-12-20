@@ -12,8 +12,8 @@ jobs:
       - uses: kubescape/github-action@main
         continue-on-error: true
         with:
-          format: pretty-printer
+          format: junit
           files: ./workload/opt/kubernetes
-      - name: Display Kubescape Results
-        run: |
-          cat results.out
+      - uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: "*.xml"
