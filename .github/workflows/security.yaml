@@ -1,0 +1,16 @@
+name: Security Scanning for Klustered Manifests
+
+on:
+  push: ~
+  pull_request: ~
+
+jobs:
+  kubescape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: kubescape/github-action@main
+        continue-on-error: true
+        with:
+          format: pretty-printer
+          files: ./workload/opt/kubernetes
